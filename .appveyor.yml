@@ -13,4 +13,5 @@ install:
 
 
 build_script:
-  - ./gradlew test --info -Dselenide.headless=true
+  - chmod +x gradlew  # Добавляем права на выполнение
+  - ./gradlew clean test --info -Dselenide.headless=true
