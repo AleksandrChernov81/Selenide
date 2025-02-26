@@ -1,10 +1,8 @@
 package ru.netology;
 
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Configuration;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -12,261 +10,186 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selectors.withText;
 import static com.codeborne.selenide.Selenide.*;
 
 public class RegistrationTest {
+    private static final String INVALID_CITY_MESSAGE = "Доставка в выбранный город недоступна";
+    private static final String INVALID_NAME_MESSAGE = "Имя и Фамилия указаны неверно. Допустимы только русские буквы, пробелы и дефисы.";
+    private static final String REQUIRED_FIELD_MESSAGE = "Поле обязательно для заполнения";
+    private static final String INVALID_PHONE_MESSAGE = "Телефон указан неверно. Должно быть 11 цифр, например, +79012345678.";
+    private static final String INVALID_DATE_MESSAGE = "Заказ на выбранную дату невозможен";
+
     public static String getLocalDate(int days) {
         return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy", new Locale("ru")));
     }
 
-    @BeforeAll
-    public static void openRegistrationPage() {
-        Configuration.headless = true;
+    @BeforeEach
+    void openRegistrationPage() {
         open("http://localhost:9999/");
     }
 
+    private void fillForm(String city, String date, String name, String phone) {
+        $("[placeholder='Город']").val(city);
+        $("[placeholder='Дата встречи']").doubleClick().sendKeys(date);
+        $("[name='name']").val(name);
+        $("[data-test-id='phone'] input").val(phone);
+        $("[data-test-id='agreement'] .checkbox__box").click();
+        $(".button__text").click();
+    }
+
+    private void checkNotification(String expectedText) {
+        $("[data-test-id='notification']").should(visible, Duration.ofSeconds(15));
+        $(".notification__content").shouldHave(Condition.text(expectedText), Duration.ofSeconds(15));
+    }
+
+    private void checkNoNotification() {
+        $("[data-test-id='notification']").shouldNot(visible, Duration.ofSeconds(15));
+    }
 
     @Test
     void shouldTestNotValidCity() {
         String planningDate = getLocalDate(5);
-        $x("//input[@placeholder=\"Город\"]").val("Минск");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иванов Иван");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("Доставка в выбранный город недоступна")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Минск", planningDate, "Иванов Иван", "+79998887766");
+        $("[data-test-id='city'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_CITY_MESSAGE));
+        checkNoNotification();
     }
+
     @Test
     void shouldTestCityEnglish() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Moscow");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("Доставка в выбранный город недоступна")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Moscow", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='city'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_CITY_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestCityEmpty() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("Поле обязательно")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='city'].input_invalid .input__sub")
+                .shouldHave(exactText(REQUIRED_FIELD_MESSAGE));
+        checkNoNotification();
     }
-
-    @Test
-    void shouldTestCityWithSpecSymbols() {
-        String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт_Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("недоступна")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
-    }
-
 
     @Test
     void shouldTestDoubleFirstName() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов-Петров");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $x("//*[@data-test-id=\"notification\"]").should(visible, Duration.ofSeconds(15));
-        $x("//*[@class='notification__content']").
-                shouldHave(Condition.text("Встреча успешно забронирована на " + planningDate), Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов-Петров", "+79998887766");
+        checkNotification("Встреча успешно забронирована на " + planningDate);
     }
 
     @Test
     void shouldTestNameWithNum() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("14567 1564");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("только русские буквы, пробелы и дефисы")).should(visible);
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "14567 1564", "+79998887766");
+        $("[data-test-id='name'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_NAME_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestNameEnglish() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Ivan Ivanov");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("только русские буквы, пробелы и дефисы")).should(visible);
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Ivan Ivanov", "+79998887766");
+        $("[data-test-id='name'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_NAME_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestNameWithSpecSymbols() {
         String planningDate = getLocalDate(6);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов!");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("только русские буквы, пробелы и дефисы")).should(visible);
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов!", "+79998887766");
+        $("[data-test-id='name'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_NAME_MESSAGE));
+        checkNoNotification();
     }
-    @Test
 
+    @Test
     void shouldTestPhoneWithoutPlus() {
         String planningDate = getLocalDate(90);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("89998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("11 цифр")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "89998887766");
+        $("[data-test-id='phone'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_PHONE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestPhoneWithOneNumber() {
         String planningDate = getLocalDate(90);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+7999888776");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("11 цифр")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+7999888776");
+        $("[data-test-id='phone'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_PHONE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestPhoneWithSpecSymbols() {
         String planningDate = getLocalDate(90);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+7(999)-888-77 66");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("11 цифр")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+7(999)-888-77 66");
+        $("[data-test-id='phone'].input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_PHONE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestPhoneEmpty() {
         String planningDate = getLocalDate(90);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("обязательно для заполнения")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "");
+        $("[data-test-id='phone'].input_invalid .input__sub")
+                .shouldHave(exactText(REQUIRED_FIELD_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestNextDayMeeting() {
         String planningDate = getLocalDate(1);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("дату невозможен")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='date'] .input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_DATE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestPlus0days() {
         String planningDate = getLocalDate(0);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("дату невозможен")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='date'] .input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_DATE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestMinus5Days() {
         String planningDate = getLocalDate(-5);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("дату невозможен")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='date'] .input_invalid .input__sub")
+                .shouldHave(exactText(INVALID_DATE_MESSAGE));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestFebruaryDays() {
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys("30.02.2023");
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $(withText("Неверно введена дата")).should(visible, Duration.ofSeconds(5));
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", "30.02.2023", "Иван Иванов", "+79998887766");
+        $("[data-test-id='date'] .input_invalid .input__sub")
+                .shouldHave(exactText("Неверно введена дата"));
+        checkNoNotification();
     }
 
     @Test
     void shouldTestUncheckedBox() {
         String planningDate = getLocalDate(4);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").doubleClick();
-        $x("//*[@class=\"button__text\"]").click();
-        $(".input_invalid[data-test-id=\"agreement\"]").should(exist);
-        $x("//*[@data-test-id=\"notification\"]").shouldNot(visible, Duration.ofSeconds(15));
-
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+79998887766");
+        $("[data-test-id='agreement'].input_invalid").should(exist);
+        checkNoNotification();
     }
 
     @Test
     void shouldTestCheckedCheckedBox() {
         String planningDate = getLocalDate(4);
-        $x("//input[@placeholder=\"Город\"]").val("Санкт-Петербург");
-        $x("//input[@placeholder=\"Дата встречи\"]").doubleClick().sendKeys(planningDate);
-        $x("//input[@name=\"name\"]").val("Иван Иванов");
-        $x("//*[@data-test-id=\"phone\"]/span/span/input").val("+79998887766");
-        $x("//*[@class=\"checkbox__text\"]").click();
-        $x("//*[@class=\"button__text\"]").click();
-        $("[data-test-id=agreement].checkbox_checked").should(exist);
-        $x("//*[@data-test-id=\"notification\"]").should(visible, Duration.ofSeconds(15));
-        $x("//*[@class='notification__content']").
-                shouldHave(Condition.text("Встреча успешно забронирована на " + planningDate), Duration.ofSeconds(15));
+        fillForm("Санкт-Петербург", planningDate, "Иван Иванов", "+79998887766");
+        checkNotification("Встреча успешно забронирована на " + planningDate);
     }
-
 }
-
-
-
-
-
