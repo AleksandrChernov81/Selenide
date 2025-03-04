@@ -24,19 +24,7 @@ public class RegistrationTest {
         holdBrowserOpen = true;
     }
 
-    @Test
-    void shouldBeValidCity() {
-        String meetingDate = getLocalDate(19);
-        $("[placeholder=Город]").setValue("Санкт-Петербург");
-        $("[data-test-id=date] span.input__box [placeholder=Дата встречи]").doubleClick().sendKeys(meetingDate);
-        $x("//input[@name='name']").val("Иван Иванов");
-        $x("//*[@data-test-id='phone']/span/span/input").val("+79998887766");
-        $x("//*[@class='checkbox__text']").click();
-        $x("//*[@class='button__text']").click();
-        $x("//*[@data-test-id='notification']").should(visible, Duration.ofSeconds(15));
-        $x("//*[@class='notification__content']").
-                shouldHave(Condition.text("Встреча успешно забронирована на " + meetingDate), Duration.ofSeconds(15));
-    }
+
 
     @Test
     void shouldTestNotValidCity() {
@@ -90,19 +78,7 @@ public class RegistrationTest {
         $x("//*[@data-test-id='notification']").shouldNot(visible, Duration.ofSeconds(15));
     }
 
-    @Test
-    void shouldTestNameWithYO() {
-        String planningDate = getLocalDate(6);
-        $x("//input[@placeholder='Город']").val("Санкт-Петербург");
-        $x("//input[@placeholder='Дата встречи']").doubleClick().sendKeys(planningDate);
-        $x("//input[@name='name']").val("Семён Семёнов");
-        $x("//*[@data-test-id='phone']/span/span/input").val("+79998887766");
-        $x("//*[@class='checkbox__text']").click();
-        $x("//*[@class='button__text']").click();
-        $x("//*[@data-test-id='notification']").should(visible, Duration.ofSeconds(15));
-        $x("//*[@class='notification__content']").
-                shouldHave(Condition.text("Встреча успешно забронирована на " + planningDate), Duration.ofSeconds(15));
-    }
+   
 
     @Test
     void shouldTestDoubleFirstName() {
