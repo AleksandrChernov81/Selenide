@@ -1,0 +1,1 @@
+{"uuid":"6747a8d3-b97b-403d-adbb-b668e347c68b","name":"shouldTestNotValidCity()","children":["2efa05e7-72b2-45a4-b8b6-fbabba94d6a6"],"befores":[{"name":"openRegistrationPage","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1741087068059,"stop":1741087076349}],"afters":[],"start":1741087067951,"stop":1741087077982}

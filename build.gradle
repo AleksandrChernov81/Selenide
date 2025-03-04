@@ -1,32 +1,52 @@
 plugins {
     id 'java'
+    id 'io.qameta.allure' version '2.11.2' // Плагин для генерации отчетов Allure
 }
 
 group 'ru.netology'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 11
-
+sourceCompatibility = 11 // Используем Java 11
+targetCompatibility = 11
 // кодировка файлов (если используете русский язык в файлах)
 compileJava.options.encoding = "UTF-8"
 compileTestJava.options.encoding = "UTF-8"
 
 repositories {
-    mavenCentral()
+    mavenCentral() // Используем Maven Central для загрузки зависимостей
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.1'
-    testImplementation 'com.codeborne:selenide:6.17.2'
-    implementation 'org.slf4j:slf4j-simple:2.0.7'
+    // Selenide для автоматизации браузера
+    testImplementation 'com.codeborne:selenide:6.19.1'
 
+    // JUnit 5 для написания тестов
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+
+    // Allure для генерации отчетов
+    testImplementation 'io.qameta.allure:allure-selenide:2.24.0'
+    testImplementation 'io.qameta.allure:allure-junit5:2.24.0'
+
+    // Логирование (опционально)
+    testImplementation 'org.slf4j:slf4j-simple:2.0.9'
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform() // Используем JUnit 5 для запуска тестов
+    systemProperties = System.properties // Передаем системные свойства в тесты
     // в тестах, вызывая `gradlew test -Dselenide.headless=true` будем передавать этот параметр в JVM (где его подтянет Selenide)
     // свойство selenide.headless используется в проектах на основе Selenide для передачи значения параметра в JVM
-    systemProperty 'selenide.headless', System.getProperty('selenide.headless')
+    systemProperty 'selenide.headless', System.getProperty('selenide.headless', 'true')
     // свойство chromeoptions.prefs используется для задания настроек браузера в проектах на основе Selenide, выключаем менеджер паролей
     systemProperty 'chromeoptions.prefs', System.getProperty('chromeoptions.prefs', "profile.password_manager_leak_detection=false")
+
+}
+
+allure {
+    version = '2.24.0' // Версия Allure
+    autoconfigure = true
+    useJUnit5 {
+        version = '2.24.0'
+    }
 }
