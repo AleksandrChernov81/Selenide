@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'io.qameta.allure' version '2.11.2' // Плагин для генерации отчетов Allure
+
 }
 
 group 'ru.netology'
@@ -19,16 +19,8 @@ repositories {
 dependencies {
     // Selenide для автоматизации браузера
     testImplementation 'com.codeborne:selenide:6.19.1'
-
-    // JUnit 5 для написания тестов
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
-
-    // Allure для генерации отчетов
-    testImplementation 'io.qameta.allure:allure-selenide:2.24.0'
-    testImplementation 'io.qameta.allure:allure-junit5:2.24.0'
-
-    // Логирование (опционально)
     testImplementation 'org.slf4j:slf4j-simple:2.0.9'
 }
 
@@ -43,10 +35,3 @@ test {
 
 }
 
-allure {
-    version = '2.24.0' // Версия Allure
-    autoconfigure = true
-    useJUnit5 {
-        version = '2.24.0'
-    }
-}
